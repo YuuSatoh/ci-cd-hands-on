@@ -73,7 +73,8 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      # AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      AvailabilityZone: "ap-northeast-1a"
       CidrBlock: !Ref PublicSubnet1CIDR
       MapPublicIpOnLaunch: true
       Tags:
@@ -84,7 +85,8 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      # AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      AvailabilityZone: "ap-northeast-1c"
       CidrBlock: !Ref PublicSubnet2CIDR
       MapPublicIpOnLaunch: true
       Tags:
@@ -95,7 +97,8 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      # AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      AvailabilityZone: "ap-northeast-1a"
       CidrBlock: !Ref PrivateSubnet1CIDR
       Tags:
         - Key: Name
@@ -105,7 +108,8 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      # AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      AvailabilityZone: "ap-northeast-1c"
       CidrBlock: !Ref PrivateSubnet2CIDR
       Tags:
         - Key: Name
@@ -152,7 +156,8 @@ Resources:
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
+      # NatGatewayId: !Ref NatGateway
+      InstanceId: !Ref NATinstance
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -166,21 +171,29 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet2
 
-  NatGatewayEIP:
-    Type: AWS::EC2::EIP
-    DependsOn: InternetGatewayAttachment
-    Properties: 
-      Domain: vpc
-  
-  NatGateway: 
-    Type: AWS::EC2::NatGateway
-    Properties: 
-      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+  NATinstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SourceDestCheck: false
+      AvailabilityZone: "ap-northeast-1a"
+      ImageId: "ami-0cf78ae724f63bac0"
+      InstanceType: "t2.micro"
+      SecurityGroupIds:
+        - !Ref NATSecurityGroup
       SubnetId: !Ref PublicSubnet1
+
+  NATSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "nat-sg"
+      GroupDescription: Access to the public
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+          - CidrIp: 0.0.0.0/0
+            IpProtocol: -1
       Tags:
         - Key: Name
-          Value: demo-infra-NatGateway
-
+          Value: demo-infra-NATSecurityGroup
   FargateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
